@@ -1,0 +1,102 @@
+package me.baro.baro.youtubeSearch;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import lombok.RequiredArgsConstructor;
+import me.baro.baro.youtubeSearch.dto.SearchResponseDto;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author Bactoria
+ * @since 2019-10-25 [2019.10월.25]
+ */
+
+@Service
+@RequiredArgsConstructor
+public class YoutubeSearchService {
+
+    private final YoutubeSearchRepository repository;
+    private final YoutubeDao repository2;
+
+    @Value("${youtube.key}")
+    private String youtubeKey;
+
+    private final JsonParser Parser = new JsonParser();
+
+    public void searchVideo(String userId, String searchData) {
+        // 최초로 검색하는 거임. 뭘 검색했는지, 누구인지. 이제 여기서 실제로 유튜브 API 이용해서 검색해야 함.
+
+        String str = search(searchData);
+        JsonObject jsonObj = (JsonObject) Parser.parse(str);
+
+        JsonArray items = jsonObj.getAsJsonArray("items");
+
+        List<Video> videos = new ArrayList<>();
+        for (JsonElement item: items) {
+
+            String thumbnailUrl = item.getAsJsonObject().get("snippet").getAsJsonObject().get("thumbnails").getAsJsonObject().get("high").getAsJsonObject().get("url").getAsString();
+            String title = item.getAsJsonObject().get("snippet").getAsJsonObject().get("title").getAsString();
+            String videoId = item.getAsJsonObject().get("id").getAsJsonObject().get("videoId").getAsString();
+
+            Video video = new Video(thumbnailUrl, title, videoId);
+            videos.add(video);
+        }
+
+        SearchEntity searchEntity = SearchEntity.builder()
+                .userId(userId)
+                .searchData(searchData)
+                .videos(videos)
+                .build();
+
+        repository.save(searchEntity);
+    }
+
+    private String search(String searchData) {
+
+        StringBuffer response = new StringBuffer();
+
+        try {
+            String apiurl = "https://www.googleapis.com/youtube/v3/search";
+            apiurl += "?key=";
+            apiurl += youtubeKey;
+            apiurl += "&part=snippet&type=video&maxResults=20&videoEmbeddable=true&regionCode=KR";
+            apiurl += "&q=" + URLEncoder.encode(searchData, "UTF-8");
+
+            URL url = new URL(apiurl);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(con.getInputStream(), "UTF-8"));
+            String inputLine;
+            while ((inputLine = br.readLine()) != null) {
+                response.append(inputLine);
+            }
+            br.close();
+        } catch (Exception e) {
+        }
+
+        return response.toString();
+    }
+
+    @Transactional
+    public SearchResponseDto fetchNextVideo(String userId) {
+        SearchEntity searchEntity = repository.findFirstByUserIdOrderBySearchIdDesc(userId).orElseThrow(()-> new RuntimeException("크크"));
+
+        Video video = repository2.findVideo(searchEntity.getSearchId());
+        video.setVisited(true);
+
+        return new SearchResponseDto(video.getVideoId(), video.getTitle(), video.getThumbnailUrl());
+    }
+}
