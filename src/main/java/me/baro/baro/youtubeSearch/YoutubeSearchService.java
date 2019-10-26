@@ -80,6 +80,7 @@ public class YoutubeSearchService {
             apiurl.append("&maxResults=20");
             apiurl.append("&videoCategoryId=15");
             apiurl.append("&videoCategoryId=27");
+            apiurl.append("&videoCategoryId=31");
             apiurl.append("&safeSearch=strict");
 
             URL url = new URL(apiurl.toString());
