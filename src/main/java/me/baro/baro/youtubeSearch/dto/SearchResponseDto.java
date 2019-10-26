@@ -1,6 +1,8 @@
 package me.baro.baro.youtubeSearch.dto;
 
 import lombok.*;
+import org.springframework.beans.factory.annotation.Value;
+
 
 /**
  * @author Bactoria
@@ -10,9 +12,16 @@ import lombok.*;
 @ToString
 @Setter @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class SearchResponseDto {
     private String thumbnailUrl;
     private String title;
     private String videoId;
+
+    private transient static final String PREFIX = "vnd.youtube:";
+
+    public SearchResponseDto(String thumbnailUrl, String title, String videoId) {
+        this.thumbnailUrl = thumbnailUrl;
+        this.title = title;
+        this.videoId = PREFIX + videoId;
+    }
 }
