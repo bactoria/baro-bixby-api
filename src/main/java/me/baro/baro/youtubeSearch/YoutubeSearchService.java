@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
 import me.baro.baro.youtubeSearch.dto.SearchResponseDto;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,7 +48,8 @@ public class YoutubeSearchService {
         for (JsonElement item: items) {
 
             String thumbnailUrl = item.getAsJsonObject().get("snippet").getAsJsonObject().get("thumbnails").getAsJsonObject().get("high").getAsJsonObject().get("url").getAsString();
-            String title = item.getAsJsonObject().get("snippet").getAsJsonObject().get("title").getAsString();
+            String titleEscaped = item.getAsJsonObject().get("snippet").getAsJsonObject().get("title").getAsString();
+            String title = StringEscapeUtils.unescapeHtml4(titleEscaped);
             String videoId = item.getAsJsonObject().get("id").getAsJsonObject().get("videoId").getAsString();
 
             Video video = new Video(thumbnailUrl, title, videoId);
