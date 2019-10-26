@@ -70,13 +70,18 @@ public class YoutubeSearchService {
         StringBuffer response = new StringBuffer();
 
         try {
-            String apiurl = "https://www.googleapis.com/youtube/v3/search";
-            apiurl += "?key=";
-            apiurl += youtubeKey;
-            apiurl += "&part=snippet&type=video&maxResults=20&videoEmbeddable=true&regionCode=KR";
-            apiurl += "&q=" + URLEncoder.encode(searchData, "UTF-8");
+            StringBuffer apiurl = new StringBuffer().append("https://www.googleapis.com/youtube/v3/search");
+            apiurl.append("?key=").append(youtubeKey);
+            apiurl.append("&q=").append(URLEncoder.encode(searchData, "UTF-8"));
 
-            URL url = new URL(apiurl);
+            apiurl.append("&regionCode=KR");
+            apiurl.append("&part=snippet");
+            apiurl.append("&type=video");
+            apiurl.append("&maxResults=20");
+            apiurl.append("&videoCategoryId=15");
+            apiurl.append("&videoCategoryId=27");
+
+            URL url = new URL(apiurl.toString());
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("GET");
 
