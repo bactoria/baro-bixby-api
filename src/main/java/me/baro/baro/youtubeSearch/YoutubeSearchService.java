@@ -78,7 +78,6 @@ public class YoutubeSearchService {
             apiurl.append("&part=snippet");
             apiurl.append("&type=video");
             apiurl.append("&maxResults=20");
-            apiurl.append("&videoCategoryId=1");
             apiurl.append("&videoCategoryId=15");
             apiurl.append("&videoCategoryId=27");
             apiurl.append("&videoCategoryId=31");
