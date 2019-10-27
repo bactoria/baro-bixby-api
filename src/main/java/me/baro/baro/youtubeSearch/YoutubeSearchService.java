@@ -5,7 +5,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
+import me.baro.baro.error.ErrorCode;
 import me.baro.baro.youtubeSearch.dto.SearchResponseDto;
+import me.baro.baro.youtubeSearch.exceptions.NextVideoNotFoundException;
+import me.baro.baro.youtubeSearch.exceptions.SearchNotFoundException;
 import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,8 +44,11 @@ public class YoutubeSearchService {
 
         String str = search(searchData);
         JsonObject jsonObj = (JsonObject) Parser.parse(str);
-
         JsonArray items = jsonObj.getAsJsonArray("items");
+
+        if (items.size() == 0) {
+            throw new SearchNotFoundException(ErrorCode.SEARCH_NOT_FOUND);
+        }
 
         List<Video> videos = new ArrayList<>();
         for (JsonElement item: items) {
@@ -101,7 +107,8 @@ public class YoutubeSearchService {
 
     @Transactional
     public SearchResponseDto fetchNextVideo(String userId) {
-        SearchEntity searchEntity = repository.findFirstByUserIdOrderBySearchIdDesc(userId).orElseThrow(()-> new RuntimeException("크크"));
+        SearchEntity searchEntity = repository.findFirstByUserIdOrderBySearchIdDesc(userId)
+                .orElseThrow(() -> new NextVideoNotFoundException(ErrorCode.NEXT_VIDEO_NOT_FOUND));
 
         Video video = repository2.findVideo(searchEntity.getSearchId());
         video.setVisited(true);
