@@ -19,9 +19,9 @@ public class SearchResponseDto {
 
     private transient static final String PREFIX = "vnd.youtube:";
 
-    public SearchResponseDto(String thumbnailUrl, String title, String videoId) {
+    public SearchResponseDto(String videoId, String title, String thumbnailUrl) {
+        this.videoId = PREFIX + videoId;
         this.thumbnailUrl = thumbnailUrl;
         this.title = title;
-        this.videoId = PREFIX + videoId;
     }
 }
