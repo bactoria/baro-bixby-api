@@ -1,14 +1,18 @@
 package me.baro.baro.KidsChannel;
 
 import lombok.RequiredArgsConstructor;
+import me.baro.baro.KidsChannel.dto.KidsChannelResponseDto;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Bactoria
@@ -20,6 +24,12 @@ import java.util.List;
 public class KidsChannelService {
 
     private final KidsChannelRepository repository;
+
+    public Page<KidsChannelResponseDto> fetchKidsChannels(Pageable pageable) {
+        Page<KidsChannel> page = repository.findAll(pageable);
+        Page<KidsChannelResponseDto> dtoPage = page.map(KidsChannelResponseDto::new);
+        return dtoPage;
+    }
 
     public void crawlAll() {
         final int START_PAGE_NUM = 1;
@@ -63,10 +73,10 @@ public class KidsChannelService {
     }
 
     public void updateKidsChannelInfo() {
-/*
-        List<KidsChannel> kidsChannels = new ArrayList<>();
+        List<KidsChannel> kidsChannels = repository.findAllByVisibleIsFalse();
 
-        for(String channelId : channelIds) {
+        for (KidsChannel kidsChannel : kidsChannels) {
+            String channelId = kidsChannel.getChannelId();
             final String targetUrl = "https://www.youtube.com/channel/" + channelId + "/about";
 
             try {
@@ -78,14 +88,22 @@ public class KidsChannelService {
                 String imageUrl = elements.select("meta[property=og:image]").attr("content");
                 String subscriber = doc.select("span.subscribed").attr("title");
 
-                KidsChannel kidsChannel = new KidsChannel(channelId, title, subscriber, imageUrl);
-                System.out.println(kidsChannel);
-                kidsChannels.add(kidsChannel);
+                kidsChannel.updateInfo(title, imageUrl, subscriber);
+
+                repository.saveAndFlush(kidsChannel);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-        return kidsChannels;
-*/
+    }
+
+    public List<KidsChannelResponseDto> fetchKidsChannels() {
+        List<KidsChannel> kindChannels = repository.findAllByOrOrderBySubscriberNumberDesc();
+
+        List<KidsChannelResponseDto> result = kindChannels.stream()
+                .map(KidsChannelResponseDto::new)
+                .collect(Collectors.toList());
+
+        return result;
     }
 }
