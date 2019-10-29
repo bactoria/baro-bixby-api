@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
+import me.baro.baro.KidsChannel.KidsChannelRepository;
 import me.baro.baro.error.ErrorCode;
 import me.baro.baro.youtubeSearch.dto.SearchResponseDto;
 import me.baro.baro.youtubeSearch.exceptions.NextVideoNotFoundException;
@@ -21,6 +22,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Bactoria
@@ -31,8 +33,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class YoutubeSearchService {
 
-    private final YoutubeSearchRepository repository;
-    private final YoutubeDao repository2;
+    private final YoutubeSearchRepository youtubeSearchRepos;
+    private final YoutubeDao youtubeDao;
+    private final KidsChannelRepository kidsChannelRepository;
 
     @Value("${youtube.key}")
     private String youtubeKey;
@@ -50,25 +53,41 @@ public class YoutubeSearchService {
             throw new SearchNotFoundException(ErrorCode.SEARCH_NOT_FOUND);
         }
 
-        List<Video> videos = new ArrayList<>();
-        for (JsonElement item: items) {
+        List<Video> videos = parseToVideos(items);
 
-            String thumbnailUrl = item.getAsJsonObject().get("snippet").getAsJsonObject().get("thumbnails").getAsJsonObject().get("high").getAsJsonObject().get("url").getAsString();
-            String titleEscaped = item.getAsJsonObject().get("snippet").getAsJsonObject().get("title").getAsString();
-            String title = StringEscapeUtils.unescapeHtml4(titleEscaped);
-            String videoId = item.getAsJsonObject().get("id").getAsJsonObject().get("videoId").getAsString();
-
-            Video video = new Video(thumbnailUrl, title, videoId);
-            videos.add(video);
-        }
+        List<Video> filteredVideos = filterVideo(videos);
 
         SearchEntity searchEntity = SearchEntity.builder()
                 .userId(userId)
                 .searchData(searchData)
-                .videos(videos)
+                .videos(filteredVideos)
                 .build();
 
-        repository.save(searchEntity);
+        youtubeSearchRepos.save(searchEntity);
+    }
+
+    private List<Video> filterVideo(List<Video> videos) {
+        return videos.stream()
+                .filter(v -> kidsChannelRepository.findById(v.getChannelId()).isPresent())
+                .collect(Collectors.toList());
+    }
+
+    private List<Video> parseToVideos(JsonArray items) {
+        List<Video> videos = new ArrayList<>();
+
+        for (JsonElement item: items) {
+
+            String videoId      = item.getAsJsonObject().get("id").getAsJsonObject().get("videoId").getAsString();
+            String channelId    = item.getAsJsonObject().get("snippet").getAsJsonObject().get("channelId").getAsString();
+            String titleEscaped = item.getAsJsonObject().get("snippet").getAsJsonObject().get("title").getAsString();
+            String thumbnailUrl = item.getAsJsonObject().get("snippet").getAsJsonObject().get("thumbnails").getAsJsonObject().get("high").getAsJsonObject().get("url").getAsString();
+
+            String title = StringEscapeUtils.unescapeHtml4(titleEscaped);
+
+            videos.add(new Video(videoId, channelId, title, thumbnailUrl));
+        }
+
+        return videos;
     }
 
     private String search(String searchData) {
@@ -84,9 +103,6 @@ public class YoutubeSearchService {
             apiurl.append("&part=snippet");
             apiurl.append("&type=video");
             apiurl.append("&maxResults=20");
-            apiurl.append("&videoCategoryId=15");
-            apiurl.append("&videoCategoryId=27");
-            apiurl.append("&videoCategoryId=31");
             apiurl.append("&safeSearch=strict");
 
             URL url = new URL(apiurl.toString());
@@ -107,10 +123,10 @@ public class YoutubeSearchService {
 
     @Transactional
     public SearchResponseDto fetchNextVideo(String userId) {
-        SearchEntity searchEntity = repository.findFirstByUserIdOrderBySearchIdDesc(userId)
+        SearchEntity searchEntity = youtubeSearchRepos.findFirstByUserIdOrderBySearchIdDesc(userId)
                 .orElseThrow(() -> new NextVideoNotFoundException(ErrorCode.NEXT_VIDEO_NOT_FOUND));
 
-        Video video = repository2.findVideo(searchEntity.getSearchId());
+        Video video = youtubeDao.findVideo(searchEntity.getSearchId());
         video.setVisited(true);
 
         return new SearchResponseDto(video.getVideoId(), video.getTitle(), video.getThumbnailUrl());

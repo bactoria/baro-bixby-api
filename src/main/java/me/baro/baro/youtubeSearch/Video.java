@@ -20,6 +20,7 @@ public class Video {
     @Id @GeneratedValue
     private Long videoIdx;
 
+    private String channelId;
     private String videoId;
     private String title;
     private String thumbnailUrl;
@@ -31,8 +32,9 @@ public class Video {
     @JoinColumn(name = "search_id")
     private SearchEntity searchEntity;
 
-    public Video(String videoId, String title, String thumbnailUrl) {
+    public Video(String videoId, String channelId, String title, String thumbnailUrl) {
         this.videoId = videoId;
+        this.channelId = channelId;
         this.title = title;
         this.thumbnailUrl = thumbnailUrl;
     }
