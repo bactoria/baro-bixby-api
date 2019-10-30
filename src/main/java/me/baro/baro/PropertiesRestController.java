@@ -16,8 +16,8 @@ public class PropertiesRestController {
 
     @GetMapping("/guideVideoUrl")
     public ResponseEntity<String> fetchGuideVideoId() {
-        String videoId = "eP4ga_fNm-E";
-        return ResponseEntity.ok().body(videoId);
+        String body = "{\"videoId\":\"eP4ga_fNm-E\"}";
+        return ResponseEntity.ok().body(body);
     }
 
 }
