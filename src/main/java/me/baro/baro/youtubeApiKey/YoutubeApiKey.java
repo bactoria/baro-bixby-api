@@ -1,20 +1,11 @@
 package me.baro.baro.youtubeApiKey;
 
-import lombok.*;
-import me.baro.baro.utils.DateTimeUtils;
-
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import java.time.LocalDate;
-
-
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
-import me.baro.baro.utils.DateTimeUtils;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
