@@ -31,6 +31,8 @@ public class SearchEntity {
     @CreationTimestamp
     private LocalDateTime searchedTime;
 
+    private String usedApiKey;
+
 /*
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name="youtube_search_video_log", joinColumns = @JoinColumn(name="search_id"))
